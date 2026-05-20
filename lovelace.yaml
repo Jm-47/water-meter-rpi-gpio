@@ -1,0 +1,39 @@
+# Example Lovelace cards for water consumption dashboard
+# Copy these into your dashboard YAML or use the UI editor
+
+# Current flow rate (if using utility meter)
+- type: sensor
+  entity: sensor.water_meter_total
+  graph: line
+  name: Water Meter Total
+  icon: mdi:water
+
+# Hourly usage bar chart (requires mini-graph-card from HACS)
+- type: custom:mini-graph-card
+  entities:
+    - entity: sensor.water_hourly
+  name: Water usage last 24 hours
+  group_by: hour
+  hours_to_show: 24
+  show:
+    graph: bar
+
+# Daily usage bar chart
+- type: custom:mini-graph-card
+  entities:
+    - entity: sensor.water_daily
+  name: Water usage (daily)
+  hours_to_show: 168
+  aggregate_func: max
+  group_by: date
+  show:
+    graph: bar
+
+# Monthly overview
+- type: statistics-graph
+  entities:
+    - sensor.water_monthly
+  stat_types:
+    - change
+  period: month
+  title: Monthly Water Consumption

@@ -1,0 +1,40 @@
+# Home Assistant configuration for water meter monitoring
+# Add this to your existing configuration.yaml
+
+# Option A: Direct GPIO (no MQTT needed)
+# Uncomment if using the rpi_gpio integration directly
+#
+# binary_sensor:
+#   - platform: rpi_gpio
+#     ports:
+#       17: water_pulse_raw
+#
+# template:
+#   - trigger:
+#       - platform: state
+#         entity_id: binary_sensor.water_pulse_raw
+#         to: "on"
+#     sensor:
+#       - name: "Water Total"
+#         unit_of_measurement: "L"
+#         device_class: water
+#         state_class: total_increasing
+#         state: "{{ (states('sensor.water_total') | float(0)) + 1 }}"
+
+# Option B: If using the Python MQTT script, the sensor is auto-discovered.
+# No sensor configuration needed — just add the utility meters below.
+
+# Utility meters for tracking consumption over time periods
+utility_meter:
+  water_hourly:
+    source: sensor.water_meter_total
+    cycle: hourly
+  water_daily:
+    source: sensor.water_meter_total
+    cycle: daily
+  water_monthly:
+    source: sensor.water_meter_total
+    cycle: monthly
+  water_yearly:
+    source: sensor.water_meter_total
+    cycle: yearly
