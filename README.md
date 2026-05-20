@@ -1,6 +1,6 @@
 # Water Meter Pulse Counter — Direct Raspberry Pi GPIO (No ESP, No Wi-Fi)
 
-A simple, reliable water consumption monitor using an inductive proximity sensor wired directly to a Raspberry Pi via an RJ45 cable. No ESP32, no Wi-Fi, no cloud.
+A simple, reliable water consumption monitor using an inductive proximity sensor wired directly to a Raspberry Pi. No ESP32, no Wi-Fi, no cloud.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -15,9 +15,9 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 ## Architecture
 
 ```
-┌──────────────┐         RJ45 Cable          ┌──────────────────┐
+┌──────────────┐        3-wire cable          ┌──────────────────┐
 │  Water Meter │  ◄── proximity sensor ──►    │   Raspberry Pi   │
-│              │   (3 wires: 5V, GND, Signal) │  (Home Assistant)│
+│              │      (5V, GND, Signal)       │  (Home Assistant)│
 └──────────────┘                              └──────────────────┘
 ```
 
@@ -26,13 +26,13 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 <!-- TODO: Add your own photos here -->
 
 ![Overview of the complete setup](images/overview.jpg)
-*The full setup: sensor on the meter, RJ45 cable, voltage divider at the Pi.*
+*The full setup: sensor on the meter, cable run, voltage divider at the Pi.*
 
 ![Proximity sensor mounted on water meter](images/sensor-on-meter.jpg)
 *LJ18A3-8Z/BX proximity sensor zip-tied to the water meter.*
 
-![RJ45 breakout wiring at the sensor end](images/rj45-sensor-end.jpg)
-*Sensor wires connected to the RJ45 breakout adapter.*
+![Wiring at the sensor end](images/rj45-sensor-end.jpg)
+*Sensor wires connected to the cable.*
 
 ![Voltage divider at the Raspberry Pi end](images/voltage-divider.jpg)
 *Simple 1kΩ + 2kΩ voltage divider before the GPIO pin.*
@@ -45,22 +45,21 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 | Item | Approx. Cost | Notes |
 |------|-------------|-------|
 | LJ18A3-8Z/BX proximity sensor (5V) | ~€4 | Must be the 5V version with built-in resistor |
-| RJ45 cable (Cat5/Cat6) | ~€2-5 | Length as needed, up to ~30m |
-| 2× RJ45 breakout adapters | ~€3 | Screw-terminal or keystone jacks |
+| 3-wire cable | ~€2-5 | Any cable with at least 3 conductors, length as needed |
 | 1kΩ + 2kΩ resistors | ~€0.10 | For 5V→3.3V voltage divider |
 | **Total** | **~€5-10** | |
 
 ## Wiring
 
-### RJ45 Pin Assignment
+### Wire Assignment
 
-Only 3 of the 8 wires are used:
+Only 3 wires are needed:
 
-| RJ45 Pin | Function | Sensor Wire Color | Pi Connection |
-|----------|----------|-------------------|---------------|
-| Pin 1 | +5V Power | Brown/Orange (VIN) | Pi 5V (physical pin 2 or 4) |
-| Pin 2 | Signal | Black | Pi GPIO17 (physical pin 11) via voltage divider |
-| Pin 3 | Ground | Blue | Pi GND (physical pin 6 or 9) |
+| Wire | Function | Sensor Wire Color | Pi Connection |
+|------|----------|-------------------|---------------|
+| 1 | +5V Power | Brown/Orange (VIN) | Pi 5V (physical pin 2 or 4) |
+| 2 | Signal | Black | Pi GPIO17 (physical pin 11) via voltage divider |
+| 3 | Ground | Blue | Pi GND (physical pin 6 or 9) |
 
 ### Voltage Divider (Required!)
 
@@ -83,15 +82,15 @@ This gives: 5V × 2kΩ / (1kΩ + 2kΩ) = 3.33V ✓
                     ==================                          ==================
 
   LJ18A3-8Z/BX                                                 Raspberry Pi GPIO
-  ┌───────────┐         RJ45 Cable                             ┌─────────────┐
+  ┌───────────┐         3-wire cable                           ┌─────────────┐
   │           │                                                 │             │
-  │ VIN (5V) ─┼──── Pin 1 (orange/white) ──────────────────────┼─ 5V (pin 2) │
+  │ VIN (5V) ─┼──── Wire 1 ────────────────────────────────────┼─ 5V (pin 2) │
   │           │                                                 │             │
-  │ Signal   ─┼──── Pin 2 (orange) ────────── [1kΩ] ───┬───────┼─ GPIO17     │
-  │           │                                         │       │  (pin 11)   │
-  │           │                                       [2kΩ]     │             │
-  │           │                                         │       │             │
-  │ GND      ─┼──── Pin 3 (green/white) ───────────────┴───────┼─ GND (pin 6)│
+  │ Signal   ─┼──── Wire 2 ──────────────── [1kΩ] ───┬─────────┼─ GPIO17     │
+  │           │                                       │         │  (pin 11)   │
+  │           │                                     [2kΩ]       │             │
+  │           │                                       │         │             │
+  │ GND      ─┼──── Wire 3 ──────────────────────────┴─────────┼─ GND (pin 6)│
   │           │                                                 │             │
   └───────────┘                                                 └─────────────┘
 ```
@@ -130,7 +129,7 @@ The proximity sensor detects the small metal disc embedded in your water meter's
 | | ESP + Wi-Fi (traditional) | Direct GPIO (this project) |
 |---|---|---|
 | Controller | ESP8266/ESP32 | None — Pi GPIO |
-| Communication | Wi-Fi | Wired (RJ45) |
+| Communication | Wi-Fi | Wired (direct cable) |
 | Software | ESPHome | HA integration or Python |
 | Reliability | Depends on Wi-Fi | Rock solid |
 | Components | Sensor + ESP + USB power | Sensor + 2 resistors |
