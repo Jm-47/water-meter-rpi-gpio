@@ -98,62 +98,17 @@ This gives: 5V × 2kΩ / (1kΩ + 2kΩ) = 3.33V ✓
 
 ## Software Setup
 
-Choose one of the two options below.
-
-### Option A: Home Assistant GPIO Integration (Simplest)
-
-This uses the [Raspberry Pi GPIO integration](https://www.home-assistant.io/integrations/rpi_gpio/) built into Home Assistant.
-
-Add to your `configuration.yaml`:
-
-```yaml
-binary_sensor:
-  - platform: rpi_gpio
-    ports:
-      17: water_pulse_raw
-
-template:
-  - trigger:
-      - platform: state
-        entity_id: binary_sensor.water_pulse_raw
-        to: "on"
-    sensor:
-      - name: "Water Total"
-        unit_of_measurement: "L"
-        device_class: water
-        state_class: total_increasing
-        state: "{{ (states('sensor.water_total') | float(0)) + 1 }}"
-
-utility_meter:
-  water_hourly:
-    source: sensor.water_total
-    cycle: hourly
-  water_daily:
-    source: sensor.water_total
-    cycle: daily
-  water_monthly:
-    source: sensor.water_total
-    cycle: monthly
-  water_yearly:
-    source: sensor.water_total
-    cycle: yearly
-```
-
-Then add the `Water Total` sensor to your **Energy Dashboard** under Water Consumption.
-
-### Option B: Python Daemon with MQTT (More Robust)
-
-For better debouncing and handling of fast flow rates, use the included Python script that publishes pulse counts to Home Assistant via MQTT.
+The included Python script reads GPIO pulses and publishes water consumption to Home Assistant via MQTT. It handles debouncing and fast flow rates reliably.
 
 See [`water_meter.py`](water_meter.py) for the full implementation.
 
-#### Prerequisites
+### Prerequisites
 
 ```bash
 pip install gpiod paho-mqtt
 ```
 
-#### Run as a systemd service
+### Run as a systemd service
 
 ```bash
 sudo cp water-meter.service /etc/systemd/system/
