@@ -101,6 +101,32 @@ The included Python script reads GPIO pulses and publishes water consumption to 
 
 See [`water_meter.py`](water_meter.py) for the full implementation.
 
+### Deploying to the Raspberry Pi
+
+You need to copy the script and service file to your Pi. The method depends on your setup:
+
+**Option A: SSH/SCP (works with any Linux-based setup)**
+
+If you have SSH access (Raspberry Pi OS, HA Supervised, or HAOS with the SSH add-on):
+
+```bash
+scp water_meter.py water-meter.service <user>@<pi-ip>:~/
+```
+
+Then SSH in:
+
+```bash
+ssh <user>@<pi-ip>
+```
+
+**Option B: Samba share (HAOS)**
+
+Install the "Samba share" add-on from the Home Assistant add-on store, then copy the files over your local network to the exposed share.
+
+**Option C: USB drive**
+
+Copy the files to a USB stick, plug it into the Pi, and mount it to retrieve them.
+
 ### Prerequisites
 
 ```bash
@@ -110,6 +136,7 @@ pip install gpiod paho-mqtt
 ### Run as a systemd service
 
 ```bash
+sudo cp water_meter.py /opt/water_meter.py
 sudo cp water-meter.service /etc/systemd/system/
 sudo systemctl enable water-meter
 sudo systemctl start water-meter
