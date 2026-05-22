@@ -107,7 +107,7 @@ You need to copy the script and service file to your Pi. The method depends on y
 
 **Option A: SSH/SCP (works with any Linux-based setup)**
 
-If you have SSH access (Raspberry Pi OS, HA Supervised, or HAOS with the SSH add-on):
+If you have SSH access (Raspberry Pi OS, HA Supervised, or HAOS with the SSH app):
 
 ```bash
 scp water_meter.py water-meter.service <user>@<pi-ip>:~/
@@ -119,21 +119,70 @@ Then SSH in:
 ssh <user>@<pi-ip>
 ```
 
-**Option B: Samba share (HAOS)**
+**Option B: File Editor app (HAOS)**
 
-Install the "Samba share" add-on from the Home Assistant add-on store, then copy the files over your local network to the exposed share.
+Open the File Editor app in Home Assistant's sidebar, navigate to the desired location, and paste the file contents directly in the browser.
 
-**Option C: USB drive**
+**Option C: Samba share (HAOS)**
+
+Install the "Samba share" app from the Home Assistant app store, then copy the files over your local network to the exposed share.
+
+**Option D: USB drive**
 
 Copy the files to a USB stick, plug it into the Pi, and mount it to retrieve them.
 
-### Prerequisites
+### HAOS-Specific Setup
+
+> **Important**: On HAOS (Home Assistant OS), you must use the **"Advanced SSH & Web Terminal"** app (community), not the basic "Terminal & SSH" app. The basic app does not expose GPIO devices to the container.
+>
+> After installing "Advanced SSH & Web Terminal":
+> 1. Configure SSH credentials (password or authorized key)
+> 2. Start the app
+> 3. Verify GPIO access: `ls /dev/gpiochip*`
+> 4. If GPIO devices are not visible, try toggling **"Protection mode" OFF** on the app's Info page and restart
+
+#### Install dependencies
+
+```bash
+apk add py3-pip
+pip3 install --break-system-packages gpiod paho-mqtt
+```
+
+#### MQTT configuration
+
+In HAOS, the Mosquitto broker runs in a separate container (app) and requires authentication. Set the environment variables:
+
+```bash
+MQTT_HOST=core-mosquitto MQTT_USER=your_user MQTT_PASSWORD=your_pass python3 ~/homeassistant/water_meter.py
+```
+
+Use the same MQTT credentials that your Home Assistant MQTT integration uses (check Settings → Devices & Services → MQTT).
+
+#### Run as a background process
+
+The SSH app container is ephemeral — pip packages and files outside of `~/homeassistant/` are lost on restart. Use the app's **init_commands** setting to auto-install and launch on every start.
+
+In the Advanced SSH & Web Terminal app's **Configuration** tab, add this init command:
+
+```
+apk add --quiet py3-pip && pip3 install --break-system-packages --quiet gpiod paho-mqtt && MQTT_HOST=core-mosquitto MQTT_USER=your_user MQTT_PASSWORD=your_pass nohup python3 /root/homeassistant/water_meter.py > /var/log/water-meter.log 2>&1 &
+```
+
+Replace `your_user` and `your_pass` with your MQTT credentials. Save and restart the app.
+
+Also enable **"Start on boot"** on the app's Info page so the script launches automatically after a Pi reboot.
+
+This handles dependency installation and script launch automatically every time the app starts.
+
+### Raspberry Pi OS Setup
+
+#### Install dependencies
 
 ```bash
 pip install gpiod paho-mqtt
 ```
 
-### Run as a systemd service
+#### Run as a systemd service
 
 ```bash
 sudo cp water_meter.py /opt/water_meter.py
@@ -141,6 +190,45 @@ sudo cp water-meter.service /etc/systemd/system/
 sudo systemctl enable water-meter
 sudo systemctl start water-meter
 ```
+
+## Home Assistant Configuration
+
+### Sensor (automatic)
+
+The Python script publishes an MQTT auto-discovery message. The entity `sensor.water_meter_total` will appear automatically in Home Assistant — no manual sensor configuration needed.
+
+### Utility Meters (recommended)
+
+Add the following to your `configuration.yaml` to track consumption over time periods:
+
+```yaml
+utility_meter:
+  water_hourly:
+    source: sensor.water_meter_gpio_water_meter_total
+    cycle: hourly
+  water_daily:
+    source: sensor.water_meter_gpio_water_meter_total
+    cycle: daily
+  water_monthly:
+    source: sensor.water_meter_gpio_water_meter_total
+    cycle: monthly
+  water_yearly:
+    source: sensor.water_meter_gpio_water_meter_total
+    cycle: yearly
+```
+
+Restart Home Assistant after adding this.
+
+### Energy Dashboard
+
+1. Go to **Settings → Dashboards → Energy**
+2. In the **Water consumption** section, click **Add water source**
+3. Select `sensor.water_meter_gpio_water_meter_total`
+4. Save
+
+Water usage will now appear in the Energy Dashboard.
+
+See [`configuration.yaml`](configuration.yaml) for the full reference config and [`lovelace.yaml`](lovelace.yaml) for a custom dashboard card example.
 
 ## Sensor Placement
 

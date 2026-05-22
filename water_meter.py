@@ -85,20 +85,46 @@ def main():
     print(f"Starting water meter counter. Loaded state: {total_liters} L")
 
     # MQTT setup
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     if MQTT_USER:
         client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+
+    connected = False
+
+    def on_connect(client, userdata, flags, reason_code, properties=None):
+        nonlocal connected
+        if reason_code == 0:
+            print("MQTT connected successfully")
+            connected = True
+        else:
+            print(f"MQTT connection failed: {reason_code}")
+
+    client.on_connect = on_connect
     client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
     client.loop_start()
+
+    # Wait for connection
+    for _ in range(50):
+        if connected:
+            break
+        time.sleep(0.1)
+
+    if not connected:
+        print("ERROR: Could not connect to MQTT broker")
+        sys.exit(1)
 
     # Publish discovery and initial state
     publish_discovery(client)
     client.publish(STATE_TOPIC, str(total_liters), retain=True)
+    print(f"Published discovery and initial state: {total_liters} L")
 
     # GPIO setup
     chip = gpiod.Chip(GPIO_CHIP)
-    line = chip.get_line(GPIO_PIN)
-    line.request(consumer="water_meter", type=gpiod.LINE_REQ_EV_RISING_EDGE)
+    line_request = gpiod.request_lines(
+        GPIO_CHIP,
+        consumer="water_meter",
+        config={GPIO_PIN: gpiod.LineSettings(edge_detection=gpiod.line.Edge.RISING)},
+    )
 
     last_event_ms = 0
     pulses_since_save = 0
@@ -109,8 +135,7 @@ def main():
         save_state(total_liters)
         client.publish(STATE_TOPIC, str(total_liters), retain=True)
         client.disconnect()
-        line.release()
-        chip.close()
+        line_request.release()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
@@ -119,31 +144,32 @@ def main():
     print(f"Listening for pulses on GPIO{GPIO_PIN} (debounce: {DEBOUNCE_MS}ms)")
 
     while True:
-        if line.event_wait(sec=10):
-            event = line.event_read()
-            now_ms = event.sec * 1000 + event.nsec // 1_000_000
+        if line_request.wait_edge_events(timeout=10):
+            events = line_request.read_edge_events()
+            for event in events:
+                now_ms = event.timestamp_ns // 1_000_000
 
-            # Debounce
-            if now_ms - last_event_ms < DEBOUNCE_MS:
-                continue
+                # Debounce
+                if now_ms - last_event_ms < DEBOUNCE_MS:
+                    continue
 
-            last_event_ms = now_ms
-            total_liters += 1
-            pulses_since_save += 1
+                last_event_ms = now_ms
+                total_liters += 1
+                pulses_since_save += 1
 
-            # Publish to MQTT
-            client.publish(STATE_TOPIC, str(total_liters), retain=True)
-            client.publish(
-                ATTR_TOPIC,
-                json.dumps({"last_pulse": time.strftime("%Y-%m-%dT%H:%M:%S")}),
-            )
+                # Publish to MQTT
+                client.publish(STATE_TOPIC, str(total_liters), retain=True)
+                client.publish(
+                    ATTR_TOPIC,
+                    json.dumps({"last_pulse": time.strftime("%Y-%m-%dT%H:%M:%S")}),
+                )
 
-            # Persist every 10 pulses to reduce SD card writes
-            if pulses_since_save >= 10:
-                save_state(total_liters)
-                pulses_since_save = 0
+                # Persist every 10 pulses to reduce SD card writes
+                if pulses_since_save >= 10:
+                    save_state(total_liters)
+                    pulses_since_save = 0
 
-            print(f"Pulse! Total: {total_liters} L")
+                print(f"Pulse! Total: {total_liters} L")
 
 
 if __name__ == "__main__":
