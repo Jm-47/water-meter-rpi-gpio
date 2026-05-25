@@ -66,12 +66,12 @@ Only 3 wires are needed (use twisted pairs in the RJ45 cable — pair each signa
 The Pi GPIO pins are **3.3V only**. The LJ18A3 outputs 5V. You need a simple resistor divider at the Pi end:
 
 ```
-Sensor Signal (5V) ─┐
-                  [10kΩ]
-                    ├── GPIO17 (3.3V safe)
-                  [20kΩ]
-                    │
-                   GND
+Sensor Signal (5V) ──┐
+                   [10kΩ]
+                     ├─── GPIO17 (3.3V safe)
+                   [20kΩ]
+                     │
+                    GND
 ```
 
 This gives: 5V × 20kΩ / (10kΩ + 20kΩ) = 3.33V ✓
@@ -88,10 +88,10 @@ AT THE WATER METER                                      AT THE RASPBERRY PI
   ┌───────────┐         RJ45 cable (< 10m)               ┌──────────────┐
   │ VIN (5V) ─┼──── Pair 1 ──────────────────────────────┼─ 5V (pin 2)  │
   │           │                                          │              │
-  │   Signal ─┼──── Pair 2 ────────────────────┐  (5V)   │              │
-  │           │                              [10kΩ]      │              │
+  │   Signal ─┼──── Pair 2 ─────────────(5V)───┐         │              │
+  │           │                             [10kΩ]       │              │
   │           │                                ├──(3.3V)─┼─ GPIO17      │
-  │           │                              [20kΩ]      │  (pin 11)    │
+  │           │                             [20kΩ]       │  (pin 11)    │
   │           │                                │         │              │
   │      GND ─┼──── Shared return ─────────────┴─────────┼─ GND (pin 6) │
   └───────────┘                                          └──────────────┘
