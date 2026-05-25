@@ -16,7 +16,7 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 
 ```
 ┌──────────────┐ ┌──────────────────┐                         ┌──────────────────┐
-│  Water Meter │ │ Proximity sensor │  ◄── 3-wire cable ──►   │   Raspberry Pi   │
+│  Water Meter │ │ Proximity sensor │  ◄── RJ45 cable ────►   │   Raspberry Pi   │
 │              │ └──────────────────┘   (5V, GND, Signal)     │ (Home Assistant) │
 └──────────────┘ [3D-printed support]                         └──────────────────┘
 ```
@@ -35,7 +35,7 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 *Sensor wires connected to the cable.*
 
 ![Voltage divider at the Raspberry Pi end](images/voltage-divider.jpg)
-*Simple 1kΩ + 2kΩ voltage divider before the GPIO pin.*
+*Simple 10kΩ + 20kΩ voltage divider before the GPIO pin.*
 
 ![Home Assistant Energy Dashboard showing water consumption](images/ha-dashboard.jpg)
 *Water consumption visible in the Home Assistant Energy Dashboard.*
@@ -45,21 +45,21 @@ If your Raspberry Pi (running Home Assistant) is close enough to run a cable to 
 | Item | Approx. Cost | Notes |
 |------|-------------|-------|
 | LJ18A3-8Z/BX proximity sensor (5V) | ~€4 | Must be the 5V version with built-in resistor |
-| 3-wire cable | ~€2-5 | Any cable with at least 3 conductors, length as needed |
-| 1kΩ + 2kΩ resistors | ~€0.10 | For 5V→3.3V voltage divider |
+| RJ45 cable (Cat5e/Cat6) | ~€2-5 | Up to 10m, using twisted pairs for each function |
+| 10kΩ + 20kΩ resistors | ~€0.10 | For 5V→3.3V voltage divider |
 | **Total** | **~€5-10** | |
 
 ## Wiring
 
 ### Wire Assignment
 
-Only 3 wires are needed:
+Only 3 wires are needed (use twisted pairs in the RJ45 cable — pair each signal wire with its return for noise rejection):
 
-| Wire | Function | Sensor Wire Color | Pi Connection |
-|------|----------|-------------------|---------------|
-| 1 | +5V Power | Brown/Orange (VIN) | Pi 5V (physical pin 2 or 4) |
-| 2 | Signal | Black | Pi GPIO17 (physical pin 11) via voltage divider |
-| 3 | Ground | Blue | Pi GND (physical pin 6 or 9) |
+| Wire | Function | Sensor Wire Color | RJ45 Pair | Pi Connection |
+|------|----------|-------------------|-----------|---------------|
+| 1 | +5V Power | Brown/Orange (VIN) | Pair 1 (e.g. orange + orange/white) | Pi 5V (physical pin 2 or 4) |
+| 2 | Signal | Black | Pair 2 (e.g. green + green/white) | Pi GPIO17 (physical pin 11) via voltage divider |
+| 3 | Ground | Blue | Shared return on both pairs | Pi GND (physical pin 6 or 9) |
 
 ### Voltage Divider (Required!)
 
@@ -67,14 +67,16 @@ The Pi GPIO pins are **3.3V only**. The LJ18A3 outputs 5V. You need a simple res
 
 ```
 Sensor Signal (5V) ─┐
-                  [1kΩ]
+                  [10kΩ]
                     ├── GPIO17 (3.3V safe)
-                  [2kΩ]
+                  [20kΩ]
                     │
                    GND
 ```
 
-This gives: 5V × 2kΩ / (1kΩ + 2kΩ) = 3.33V ✓
+This gives: 5V × 20kΩ / (10kΩ + 20kΩ) = 3.33V ✓
+
+Using 10kΩ + 20kΩ (instead of 1kΩ + 2kΩ) reduces current draw to ~0.17mA while remaining low enough impedance to avoid noise issues on cable runs up to 10m.
 
 ### Wiring Diagram
 
@@ -83,15 +85,15 @@ AT THE WATER METER                                      AT THE RASPBERRY PI
 ==================                                      ===================
 
   LJ18A3-8Z/BX                                           Raspberry Pi GPIO
-  ┌───────────┐         3-wire cable                     ┌──────────────┐
-  │ VIN (5V) ─┼──── Wire 1 ──────────────────────────────┼─ 5V (pin 2)  │
+  ┌───────────┐         RJ45 cable (< 10m)               ┌──────────────┐
+  │ VIN (5V) ─┼──── Pair 1 ──────────────────────────────┼─ 5V (pin 2)  │
   │           │                                          │              │
-  │   Signal ─┼──── Wire 2 ────────────────────┐  (5V)   │              │
-  │           │                              [1kΩ]       │              │
+  │   Signal ─┼──── Pair 2 ────────────────────┐  (5V)   │              │
+  │           │                              [10kΩ]      │              │
   │           │                                ├──(3.3V)─┼─ GPIO17      │
-  │           │                              [2kΩ]       │  (pin 11)    │
+  │           │                              [20kΩ]      │  (pin 11)    │
   │           │                                │         │              │
-  │      GND ─┼──── Wire 3 ────────────────────┴─────────┼─ GND (pin 6) │
+  │      GND ─┼──── Shared return ─────────────┴─────────┼─ GND (pin 6) │
   └───────────┘                                          └──────────────┘
 ```
 
@@ -255,7 +257,7 @@ The proximity sensor detects the small metal disc embedded in your water meter's
 
 - **No pulses detected**: Check voltage divider output with a multimeter (should read ~3.3V when sensor triggers). Verify sensor LED blinks when water flows.
 - **Double counting**: Increase debounce time in the Python script or add a hardware capacitor (100nF) across the GPIO pin.
-- **Signal noise over long cable**: Add a 10kΩ pull-down resistor at the Pi end, or use a shielded cable.
+- **Signal noise over long cable**: The RJ45 twisted pairs help reject interference. If you still get noise, try adding a 100nF capacitor across GPIO17 to GND, or switch to lower value resistors (1kΩ + 2kΩ).
 - **Sensor doesn't detect magnet**: Try repositioning — the sensing distance is ~8mm. Some meters have weaker magnets.
 
 ## License
