@@ -12,12 +12,12 @@ plate_w = 64;
 plate_h = 54;
 plate_t = 2;
 
-l = 7;
+l = 5;
 
 // Sensor holder - tapered cylinder
 holder_h = 9;
-holder_r1 = 14;     // base radius (Ø28mm footprint)
-holder_r2 = sensor_r + clearance + 1.5; // top radius: snug around sensor with wall
+holder_r1 = 13.5; // base radius
+holder_r2 = 10.5; // top radius
 
 // Sensor hole: sized for the actual M18 sensor body + clearance
 sensor_hole_r = sensor_r + clearance; // 9.4mm → Ø18.8mm
@@ -46,6 +46,9 @@ difference() {
       
     translate([plate_h/2, plate_h/2, -1])
       cylinder(h = plate_t+2, r = (plate_h)/2-l);
+      
+    // Sensor through-hole
+    translate([14, 23, -1]) cylinder(h = holder_h + plate_t + 2, r = sensor_hole_r);
   }
 }
 
