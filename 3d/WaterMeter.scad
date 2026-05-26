@@ -31,7 +31,8 @@ corner_cut = 20;
 difference() {
   union() {
     // Base plate
-    cube([plate_w, plate_h, plate_t]);
+    translate([plate_h/2, 0,0]) cube([plate_w-plate_h/2, plate_h, plate_t]);
+    translate([plate_h/2, plate_h/2]) cylinder(h = plate_t, r = plate_h/2);
 
     // Sensor holder (tapered cylinder)
     translate([14, 23, 0])
@@ -39,30 +40,19 @@ difference() {
 
     // Retention tabs ("ergots") - slightly taller for better grip on meter rim
     translate([-2, 20.5, 0]) cube([3, 5, 2]);   // bottom tab
-    translate([60, -2, 0])     cube([4, 5, 4]);   // top-right tab
-    translate([45, 51, 0])     cube([4, 5, 4]);   // left tab
+    translate([60, -2, 0])   cube([4, 5, 4]);   // top-right tab
+    translate([45, 51, 0])   cube([4, 5, 4]);   // left tab
   }
   union() {
+    translate([plate_h/2, l, -1])
+      cube([plate_w - l - plate_h/2, plate_h - 2*l, plate_t + 2]);
+      
+    translate([plate_h/2, plate_h/2, -1])
+      cylinder(h = plate_t+2, r = (plate_h)/2-l);
+
     // Sensor through-hole (Ø18.8mm - fits M18 sensor body)
     translate([14, 23, -1])
       cylinder(h = holder_h + plate_t + 2, r = sensor_hole_r);
-
-  translate([l, l, -1])
-    cube([plate_w - 2*l, plate_h - 2*l, plate_t + 2]);
-
-    // Knob clearance hole
-  //  translate([45, 25, -1])
-  //    cylinder(h = plate_t + 2, r = knob_r);
-
-    // Bottom-left corner (diagonal cut)
-  //  translate([-1, -1, -1])
-   //   linear_extrude(plate_t + 2)
-  //      polygon([[0, 0], [corner_cut + 1, 0], [0, corner_cut + 1]]);
-
-    // Top-left corner (diagonal cut)
-  //  translate([-1, plate_h + 1, -1])
-  //    linear_extrude(plate_t + 2)
-   //     polygon([[0, 0], [corner_cut + 1, 0], [0, -(corner_cut + 1)]]);
   }
 }
 
