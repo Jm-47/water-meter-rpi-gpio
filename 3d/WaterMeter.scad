@@ -4,13 +4,15 @@
 
 $fn = 50; // smoother curves for printing
 
-sensor_d = 18;      // LJ18A3 body diameter
+sensor_d = 17;      // LJ18A3 body diameter
 sensor_r = sensor_d / 2;  // 9mm
 clearance = 0.4;    // printing tolerance
 
 plate_w = 64;
-plate_h = 50;
-plate_t = 3;
+plate_h = 54;
+plate_t = 2;
+
+l = 7;
 
 // Sensor holder - tapered cylinder
 holder_h = 9;
@@ -32,32 +34,35 @@ difference() {
     cube([plate_w, plate_h, plate_t]);
 
     // Sensor holder (tapered cylinder)
-    translate([14, 25, 0])
+    translate([14, 23, 0])
       cylinder(h = holder_h, r1 = holder_r1, r2 = holder_r2);
 
     // Retention tabs ("ergots") - slightly taller for better grip on meter rim
-    translate([-2, 25-2.5, 0]) cube([3, 5, 3]);   // left tab
-    translate([60, -2, 0])     cube([4, 3, 3]);    // bottom-right tab
-    translate([45, 49, 0])     cube([4, 3, 3]);    // top-right tab
+    translate([-2, 20.5, 0]) cube([3, 5, 2]);   // bottom tab
+    translate([60, -2, 0])     cube([4, 5, 4]);   // top-right tab
+    translate([45, 51, 0])     cube([4, 5, 4]);   // left tab
   }
   union() {
     // Sensor through-hole (Ø18.8mm - fits M18 sensor body)
-    translate([14, 25, -1])
+    translate([14, 23, -1])
       cylinder(h = holder_h + plate_t + 2, r = sensor_hole_r);
 
+  translate([l, l, -1])
+    cube([plate_w - 2*l, plate_h - 2*l, plate_t + 2]);
+
     // Knob clearance hole
-    translate([45, 25, -1])
-      cylinder(h = plate_t + 2, r = knob_r);
+  //  translate([45, 25, -1])
+  //    cylinder(h = plate_t + 2, r = knob_r);
 
     // Bottom-left corner (diagonal cut)
-    translate([-1, -1, -1])
-      linear_extrude(plate_t + 2)
-        polygon([[0, 0], [corner_cut + 1, 0], [0, corner_cut + 1]]);
+  //  translate([-1, -1, -1])
+   //   linear_extrude(plate_t + 2)
+  //      polygon([[0, 0], [corner_cut + 1, 0], [0, corner_cut + 1]]);
 
     // Top-left corner (diagonal cut)
-    translate([-1, plate_h + 1, -1])
-      linear_extrude(plate_t + 2)
-        polygon([[0, 0], [corner_cut + 1, 0], [0, -(corner_cut + 1)]]);
+  //  translate([-1, plate_h + 1, -1])
+  //    linear_extrude(plate_t + 2)
+   //     polygon([[0, 0], [corner_cut + 1, 0], [0, -(corner_cut + 1)]]);
   }
 }
 
