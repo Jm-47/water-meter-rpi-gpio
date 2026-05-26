@@ -28,15 +28,12 @@ knob_r = 16; // large hole for knob clearance (Ø32mm)
 // Corner cuts
 corner_cut = 20;
 
+// Base plate
 difference() {
   union() {
     // Base plate
     translate([plate_h/2, 0,0]) cube([plate_w-plate_h/2, plate_h, plate_t]);
     translate([plate_h/2, plate_h/2]) cylinder(h = plate_t, r = plate_h/2);
-
-    // Sensor holder (tapered cylinder)
-    translate([14, 23, 0])
-      cylinder(h = holder_h, r1 = holder_r1, r2 = holder_r2);
 
     // Retention tabs ("ergots") - slightly taller for better grip on meter rim
     translate([-2, 20.5, 0]) cube([3, 5, 2]);   // bottom tab
@@ -49,10 +46,11 @@ difference() {
       
     translate([plate_h/2, plate_h/2, -1])
       cylinder(h = plate_t+2, r = (plate_h)/2-l);
-
-    // Sensor through-hole (Ø18.8mm - fits M18 sensor body)
-    translate([14, 23, -1])
-      cylinder(h = holder_h + plate_t + 2, r = sensor_hole_r);
   }
 }
 
+// Sensor holder
+difference() {
+  translate([14, 23, 0])  cylinder(h = holder_h, r1 = holder_r1, r2 = holder_r2);
+  translate([14, 23, -1]) cylinder(h = holder_h + plate_t + 2, r = sensor_hole_r);
+}
